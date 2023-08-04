@@ -185,7 +185,7 @@ deliberately changed, or just different by accident.
 ## Training:
 
 ```
-python train.py transfer=path_to_ckpt
+python train.py [transfer=path_to_ckpt]
 ```
 Config file in config/config_{high,med,low}_noise.json
 
@@ -233,13 +233,10 @@ prompt.
 
 ## Current results
 
-```
-python sample_views.py --transfer .
-```
-
-These clearly need a bit more training!
-
 #### Conditioned on a single view
+
+Sampling using a fixed number of input views (default 1), around a spiral
+
 
 Conditioning image
 ![cars-conditioning-1-000000](https://github.com/jfozard/nvs_test/assets/4390954/0574042b-e372-4743-9433-d0cf209cd5a7)
@@ -249,17 +246,35 @@ Novel views generated (upper - denoised samples, lower- RGB renderings from NeRF
 
 Stochastic sampling
 
+```
+python sample_views.py --transfer=genvs-unofficial/genvs.pt --stochastic
+```
+
 https://github.com/jfozard/nvs_test/assets/4390954/cd744bbd-9bdb-427a-a46c-be70f1a65e19
 
 Deterministic sampling
+
+```
+python sample_views.py --transfer=genvs-unofficial/genvs.pt --prefix cars_det
+```
+
 
 https://github.com/jfozard/nvs_test/assets/4390954/fc45bd4d-0e34-455f-8d34-56ea20176c6b
 
 Sampling progress (stochastic)
 
+```
+python sample_views.py --transfer=genvs-unofficial/genvs.pt --stochastic --progress
+```
+
 https://github.com/jfozard/nvs_test/assets/4390954/bdd2b8a1-8e31-4ee7-9949-6ca0efc9b98f
 
 Sampling progress (deterministic)
+
+```
+python sample_views.py --transfer=genvs-unofficial/genvs.pt --progress --prefix cars_det
+```
+
 
 https://github.com/jfozard/nvs_test/assets/4390954/c1a5acfd-2d34-4d55-8d14-95d71141a806
 
@@ -278,11 +293,19 @@ https://github.com/jfozard/nvs_test/assets/4390954/8c0aecd0-1744-4a0c-bfab-88032
 
 Stochastic
 
+```
+python sample_views.py --transfer=genvs-unofficial/genvs.pt --stochastic --progress --unconditional --prefix uc
+```
+
+
 ![uc-step-1-000000-250](https://github.com/jfozard/nvs_test/assets/4390954/590c4fd7-9b47-4390-bdfb-ef50446639e0)
 
 https://github.com/jfozard/nvs_test/assets/4390954/6fedfdae-7ae3-4e95-bb00-6af90235b3e0
 
 Deterministic
+```
+python sample_views.py --transfer=genvs-unofficial/genvs.pt --progress --unconditional --prefix uc_det
+```
 
 ![uc_det-step-1-000000-250](https://github.com/jfozard/nvs_test/assets/4390954/6771b11d-23ff-48f4-8928-993900186c5e)
 
