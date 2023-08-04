@@ -187,7 +187,13 @@ deliberately changed, or just different by accident.
 ```
 python train.py transfer=path_to_ckpt
 ```
-Config file in config/config.yaml
+Config file in config/config_{high,med,low}_noise.json
+
+Actual training procedure was convoluted - pre-train diffusion model at 64x64, train with
+different image -> NeRF model, upscale to 128x128, and then replace image->NeRF model by
+DeepLabV3+.
+
+TODO: Retrain with clearer procedure (on different dataset - chairs or COCO3D).
 
 
 ## Data Preparation
@@ -338,7 +344,5 @@ NeRF rendering using an old version of ashawkey's excellent https://github.com/a
 
 Some data pipeline from https://github.com/a6o/3d-diffusion-pytorch and https://github.com/halixness/distributed-3d-diffusion-pytorch
 
-
-
-
-
+DeepLabV3+ implementation from
+https://github.com/qubvel/segmentation_models.pytorch
