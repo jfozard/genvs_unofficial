@@ -239,10 +239,10 @@ Sampling using a fixed number of input views (default 1), around a spiral
 
 
 Conditioning image
-![cars-conditioning-1-000000](https://github.com/jfozard/nvs_test/assets/4390954/0574042b-e372-4743-9433-d0cf209cd5a7)
+
+![cars-conditioning-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/4b829300-b418-401e-9e07-b9cbf862423a)
 
 Novel views generated (upper - denoised samples, lower- RGB renderings from NeRF)
-
 
 Stochastic sampling
 
@@ -250,7 +250,7 @@ Stochastic sampling
 python sample_views.py --transfer=genvs-unofficial/genvs.pt --stochastic
 ```
 
-https://github.com/jfozard/nvs_test/assets/4390954/cd744bbd-9bdb-427a-a46c-be70f1a65e19
+https://github.com/jfozard/genvs_unofficial/assets/4390954/25b0dbab-a583-4815-a1c7-fe53b05c2b74
 
 Deterministic sampling
 
@@ -258,8 +258,8 @@ Deterministic sampling
 python sample_views.py --transfer=genvs-unofficial/genvs.pt --prefix cars_det
 ```
 
+https://github.com/jfozard/genvs_unofficial/assets/4390954/236dd27d-8d00-4d1b-a974-444423dc81ea
 
-https://github.com/jfozard/nvs_test/assets/4390954/fc45bd4d-0e34-455f-8d34-56ea20176c6b
 
 Sampling progress (stochastic)
 
@@ -267,7 +267,7 @@ Sampling progress (stochastic)
 python sample_views.py --transfer=genvs-unofficial/genvs.pt --stochastic --progress
 ```
 
-https://github.com/jfozard/nvs_test/assets/4390954/bdd2b8a1-8e31-4ee7-9949-6ca0efc9b98f
+https://github.com/jfozard/genvs_unofficial/assets/4390954/58afd066-f96a-4826-a3e1-92daa11ba39d
 
 Sampling progress (deterministic)
 
@@ -275,18 +275,21 @@ Sampling progress (deterministic)
 python sample_views.py --transfer=genvs-unofficial/genvs.pt --progress --prefix cars_det
 ```
 
+https://github.com/jfozard/genvs_unofficial/assets/4390954/7a7e52f8-c92c-497a-a08e-575b31cc8af3
 
-https://github.com/jfozard/nvs_test/assets/4390954/c1a5acfd-2d34-4d55-8d14-95d71141a806
 
-![cars-conditioning-1-000001](https://github.com/jfozard/nvs_test/assets/4390954/6882b749-dd47-486e-9377-8bb4c19da051)
 
-https://github.com/jfozard/nvs_test/assets/4390954/a76015f1-2dc5-421c-8d17-405758c2cecd
+Another initial view
 
-https://github.com/jfozard/nvs_test/assets/4390954/e2c8f175-c4a3-465a-ae14-4a39a11ff506
+![cars-conditioning-1-000001](https://github.com/jfozard/genvs_unofficial/assets/4390954/4a05d065-2d5a-4f34-aa4d-8fb832045a07)
 
-https://github.com/jfozard/nvs_test/assets/4390954/5e8cd52f-aff9-4b36-8074-bdbee2d35eb6
+https://github.com/jfozard/genvs_unofficial/assets/4390954/6ae4b3ff-7cef-49b2-8955-1c45bdab03ec
 
-https://github.com/jfozard/nvs_test/assets/4390954/8c0aecd0-1744-4a0c-bfab-8803265905b4
+https://github.com/jfozard/genvs_unofficial/assets/4390954/2ab20fcb-d775-4ba3-97b6-54ad4eb836e8
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/70e233be-aa8b-41e0-9a6b-9e79821abbda
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/c90c330a-802d-4894-918f-9a673ba3fba0
 
 
 #### Unconditional samples (Supply pure noise conditioning image to diffusing model)
@@ -297,19 +300,21 @@ Stochastic
 python sample_views.py --transfer=genvs-unofficial/genvs.pt --stochastic --progress --unconditional --prefix uc
 ```
 
+![uc-step-1-000000-250](https://github.com/jfozard/genvs_unofficial/assets/4390954/4388111f-c9a7-42bd-9858-fc892c4aa50f)
 
-![uc-step-1-000000-250](https://github.com/jfozard/nvs_test/assets/4390954/590c4fd7-9b47-4390-bdfb-ef50446639e0)
+https://github.com/jfozard/genvs_unofficial/assets/4390954/a5740a15-a70c-4ff2-8c2e-fb883de77ad2
 
-https://github.com/jfozard/nvs_test/assets/4390954/6fedfdae-7ae3-4e95-bb00-6af90235b3e0
+
 
 Deterministic
 ```
 python sample_views.py --transfer=genvs-unofficial/genvs.pt --progress --unconditional --prefix uc_det
 ```
 
-![uc_det-step-1-000000-250](https://github.com/jfozard/nvs_test/assets/4390954/6771b11d-23ff-48f4-8928-993900186c5e)
+![uc_det-step-1-000000-250](https://github.com/jfozard/genvs_unofficial/assets/4390954/ca210a4d-f7cc-4bcb-b091-eaefdaebd9d9)
 
-https://github.com/jfozard/nvs_test/assets/4390954/2aa18fa4-3317-4d29-b3e8-97bf3f337f4e
+https://github.com/jfozard/genvs_unofficial/assets/4390954/5568359f-85f1-40db-9583-28dfd330ebcc
+
 
 ### Autoregressive sampling
 
@@ -325,16 +330,15 @@ a sensible addition to the denoising model.
 
 First frame of each video is the conditioning image.
 
-https://github.com/jfozard/nvs_test/assets/4390954/716969c4-8061-45c0-95dd-47ade62fb305
+https://github.com/jfozard/genvs_unofficial/assets/4390954/50050792-8722-4c8c-a312-fa651fa382cd
 
-https://github.com/jfozard/nvs_test/assets/4390954/e9bae498-50ff-49f2-98e4-43930158a446
+https://github.com/jfozard/genvs_unofficial/assets/4390954/3c842dbf-cb53-4329-9c05-8dce814987ca
 
-https://github.com/jfozard/nvs_test/assets/4390954/580a5ba1-8354-4f5d-a674-f4f08ca2a208
+https://github.com/jfozard/genvs_unofficial/assets/4390954/d01c89da-bc35-4b33-b1f8-bbe482d6ca14
 
-https://github.com/jfozard/nvs_test/assets/4390954/a28173b0-9469-449c-a1a2-3499038e5629
+https://github.com/jfozard/genvs_unofficial/assets/4390954/62459e67-7fb5-4520-978b-d5ee274e3154
 
-https://github.com/jfozard/nvs_test/assets/4390954/82b1a47d-571d-4976-aa2c-0892dbca2c13
-
+https://github.com/jfozard/genvs_unofficial/assets/4390954/3f27a10d-09b0-4b1d-a220-5b7d737d3b1b
 
 
 ## TODO
