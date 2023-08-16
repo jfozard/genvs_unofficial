@@ -1,0 +1,30 @@
+transfer: "output_sd_restart2/"
+transfer_filename: "large-k-multi-latest.pt"
+use_wandb: False
+image_size: 128
+max_epochs: 8180
+batch_size: 2
+gradient_accumulation_steps: 32
+sample_every_n_steps: 1000
+epochs_checkpoint: 5
+epochs_checkpoint_save: 50
+load_optim_state_from_checkpoint: False
+combine: False
+sd_checkpoint_path: None
+use_amp: False
+lr_in: 1e-4
+lr_nerf: 2e-4
+lr_diff: 1e-5
+nerf_diff:
+  input_size: 128
+  color_feat_dim: 16
+  depth_size: 64
+  a_prob: 0.0
+  diff_augmentation_prob: 0.0
+  k_diffusion_config: "k_configs/config_128_high.json"
+  lambda_rgb_first: 0.00
+  lambda_rgb_other: 1.0
+  lambda_opacity: 0.001
+  lambda_depth: 0.0
+  lambda_diffusion: 1.0
+  no_cond_prob: 0.1
