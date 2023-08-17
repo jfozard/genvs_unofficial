@@ -304,6 +304,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
 
                 na = render_output_views.shape[2]
                 output = render_output_views[j,0]
+                output = 0.5*(output+1)
                 
                 grid = utils.make_grid(output, nrow=math.ceil(na ** 0.5), padding=0)
             
@@ -315,16 +316,20 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
 
             na = render_output_views.shape[2]
             output = render_output_views[j,0]
-
+            output = 0.5*(output+1)
+            
             grid = utils.make_grid(output, nrow=math.ceil(na ** 0.5), padding=0)
-
             output = (255*np.clip(grid.cpu().numpy().transpose(1,2,0), 0, 1)).astype(np.uint8)
+
+            
             imwrite(f'{output_path}/{prefix}-final-{cond_views}-{step:06d}.png', output)
 
                 
             for k in range(render_output_views.shape[2]):
+
+                
             
-                output = convert_and_make_grid((render_output_views[-1,0,k], render_rgb_views[-1,k], render_output_depth[-1,k], render_output_opacities[-1,k]))
+                output = convert_and_make_grid((0.5*(render_output_views[-1,0,k]+1), render_rgb_views[-1,k], render_output_depth[-1,k], render_output_opacities[-1,k]))
             
                 output = (255*np.clip(output,0,1)).astype(np.uint8)
                 imwrite(f'{output_path}/{prefix}-sample-{cond_views}-{step:06d}-{k}.png', output)
