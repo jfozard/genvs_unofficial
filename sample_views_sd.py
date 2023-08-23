@@ -59,7 +59,7 @@ def cleanup():
 
 
 @torch.no_grad()
-def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True, unconditional=False, sample_view_batch=2, sampler_name="unipc", steps=50, cfg=1):
+def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True, unconditional=False, sample_view_batch=2, sampler_name="unipc", steps=50, cfg=1, churn=0.0):
     # model - NerfDiff model
     # data - dataset batch 
     # source_view_idx - list of view indicies used to generate NeRF
@@ -135,7 +135,7 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
         render_rgb_views.append(first_view_rgb.cpu())
 
         if progress:
-            samples1 = model.module.sd_pipeline.sample_all(first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, sampler_name=sampler_name, sampling_timesteps=steps, cfg=cfg)
+            samples1 = model.module.sd_pipeline.sample_all(first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, sampler_name=sampler_name, sampling_timesteps=steps, cfg=cfg, churn=churn)
             print('s1 orig shape', samples1.shape)
             samples1 = samples1.view(samples1.shape[0], B, QQ, *samples1.shape[2:])
             print('s1 shape', samples1.shape)
@@ -223,7 +223,7 @@ def convert_and_make_grid(views):
     
 
 
-def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  prefix="cars", stochastic=False, unconditional=False, n_samples=10, seed=1234, sampler_name="unipc", steps=50, cfg=1, use_wandb = False):
+def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  prefix="cars", stochastic=False, unconditional=False, n_samples=10, seed=1234, sampler_name="unipc", steps=50, cfg=1, churn=0.0, use_wandb = False):
 
     torch.manual_seed(seed)
     random.seed(seed)
@@ -290,7 +290,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
             cleanup()
             return
 
-        original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities = sample_sphere(model, data, cond_view_list, progress=progress, stochastic=stochastic, unconditional=unconditional, sampler_name=sampler_name, steps=steps, cfg=cfg)
+        original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities = sample_sphere(model, data, cond_view_list, progress=progress, stochastic=stochastic, unconditional=unconditional, sampler_name=sampler_name, steps=steps, cfg=cfg, churn=churn)
 
         if progress:
             conditioning_views = original_views
@@ -370,8 +370,9 @@ if __name__ == "__main__":
     parser.add_argument('--steps', type=int, default=50)
     parser.add_argument('--n', type=int, default=1)
     parser.add_argument('--seed', type=int, default=1234)
-    parser.add_argument('--cfg', type=int, default=1)
+    parser.add_argument('--cfg', type=float, default=1)
+    parser.add_argument('--churn', type=float, default=0.0)
     args = parser.parse_args()
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus
-    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.progress, args.prefix, args.stochastic, args.unconditional, args.n, args.seed, args.sampler, args.steps, args.cfg), nprocs=world_size, join=True)
+    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.progress, args.prefix, args.stochastic, args.unconditional, args.n, args.seed, args.sampler, args.steps, args.cfg, args.churn), nprocs=world_size, join=True)

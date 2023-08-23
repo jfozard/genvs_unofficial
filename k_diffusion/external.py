@@ -34,7 +34,7 @@ class VDenoiser(nn.Module):
         return (model_output - target).pow(2).flatten(1).mean(1)
 
     def forward(self, input, sigma, **kwargs):
-        c_skip, c_out, c_in = [utils.append_dims(x, input.ndim) for x in self.get_scalings(sigma)]
+        c_skip, c_out, c_in = [utils.append_dims(x, input.ndim) for x in self.get_scalings(sigma)]        
         return self.inner_model(input * c_in, self.sigma_to_t(sigma), **kwargs) * c_out + input * c_skip
 
 
@@ -108,8 +108,12 @@ class DiscreteEpsDDPMDenoiser(DiscreteSchedule):
         return (eps - noise).pow(2).flatten(1).mean(1)
 
     def forward(self, input, sigma, **kwargs):
+        print('input0', input.var())
         c_out, c_in = [utils.append_dims(x, input.ndim) for x in self.get_scalings(sigma)]
         eps = self.get_eps(input * c_in, self.sigma_to_t(sigma), **kwargs)
+        print('c_in/out', c_in, c_out, sigma)
+        print('input', input.var(), (input*c_in).var())
+        print('teff', self.sigma_to_t(sigma), sigma)
         return input + eps * c_out
 
 
@@ -135,7 +139,20 @@ class CompVisDenoiser(DiscreteEpsDDPMDenoiser):
         super().__init__(model, model.alphas_cumprod, quantize=quantize)
 
     def get_eps(self, *args, **kwargs):
-        return self.inner_model.apply_model(*args, **kwargs)
+        #return self.inner_model.apply_model(*args, **kwargs)
+
+        print('cv', args[0].mean(), args[0].var(), args[1])
+
+        cfg = 7.5
+
+        sample = torch.cat([args[0]]*2, dim=0)
+        t = torch.cat([args[1]]*2, dim=0)
+
+        eps_all = self.inner_model(sample, t, **kwargs).sample
+
+        eps, eps_uc = eps_all.chunk(2)
+    
+        return eps*cfg - eps_uc*(cfg-1)
 
 
 class DiscreteVDDPMDenoiser(DiscreteSchedule):

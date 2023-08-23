@@ -63,6 +63,8 @@ from diffusers.utils.import_utils import is_xformers_available
 
 from torch import nn
 
+import k_diffusion as K
+from k_diffusion.external import CompVisDenoiser
 
 
 def import_model_class_from_model_name_or_path(pretrained_model_name_or_path: str, revision: str):
@@ -126,7 +128,7 @@ class SDPipeline(nn.Module):
         self.noise_scheduler = DDPMScheduler.from_pretrained(pretrained_model_name_or_path, subfolder="scheduler")
         
         #self.noise_scheduler = DDIMScheduler.from_config(pipeline.scheduler.config)
-        self.noise_scheduler = EulerDiscreteScheduler.from_config(self.noise_scheduler.config)
+        #self.noise_scheduler = EulerDiscreteScheduler.from_config(self.noise_scheduler.config)
         
         self.text_encoder = text_encoder_cls.from_pretrained(
             pretrained_model_name_or_path, subfolder="text_encoder", revision=revision
@@ -191,12 +193,15 @@ class SDPipeline(nn.Module):
         input_ids = self.tokenize_captions(['a car']*bsz).cuda()
 
         cond_flag = cond_flag.to(pixel_values.device)
+
         if self.zero_uncond:
             conditioning_pixel_values = torch.where(cond_flag[:,None,None,None], torch.zeros_like(conditioning_pixel_values), conditioning_pixel_values)
         else:
             conditioning_pixel_values = torch.where(cond_flag[:,None,None,None], torch.rand_like(conditioning_pixel_values), conditioning_pixel_values)
 
+
         
+            
         latents = self.vae.encode(pixel_values.to(dtype=self.weight_dtype)).latent_dist.sample()
         latents = latents * self.vae.config.scaling_factor
 
@@ -213,6 +218,8 @@ class SDPipeline(nn.Module):
 
         # Get the text embedding for conditioning
         encoder_hidden_states = self.text_encoder(input_ids)[0]
+
+
         
         controlnet_image = conditioning_pixel_values.to(dtype=self.weight_dtype)
 
@@ -361,7 +368,7 @@ class SDPipeline(nn.Module):
 
 
     @torch.no_grad()
-    def sample_all(self, conditioning_pixel_values, sampling_timesteps=50, stochastic=True, unconditional=False, sampler_name='ddpm', cfg=1):
+    def sample_all_orig(self, conditioning_pixel_values, sampling_timesteps=50, stochastic=True, unconditional=False, sampler_name='ddpm', cfg=1):
 
         all_samplers = { 'ddpm':DDPMScheduler,
               'euler_a': EulerAncestralDiscreteScheduler,
@@ -376,10 +383,13 @@ class SDPipeline(nn.Module):
             else:
                 conditioning_pixel_values = torch.rand_like(conditioning_pixel_values)
 
+                
         input_prompts = ['a car']*n
         
         controlnet = self.controlnet
 
+        controlnet.eval()
+        
         pipeline = StableDiffusionControlNetPipeline.from_pretrained(
             self.pretrained_model_name_or_path,
             vae=self.vae,
@@ -425,5 +435,229 @@ class SDPipeline(nn.Module):
         #print([p.shape for p in progress])
         progress = torch.stack(progress, dim=0)
         #print(progress.shape)
+
+        controlnet.train()
+        
+        return progress
+
+
+    @torch.no_grad()
+    def sample_all(self, conditioning_pixel_values, sampling_timesteps=50, stochastic=True, unconditional=False, sampler_name='ddpm', cfg=1, churn=0.0):
+
+        controlnet_both_sides = False
+        
+        n = conditioning_pixel_values.shape[0]
+
+        do_cfg = (cfg!=1) and (cfg!=1.0)
+
+            
+                
+        input_prompts = ['a car']*n
+        
+        controlnet = self.controlnet
+
+        controlnet.eval()
+
+        noise_scheduler = self.noise_scheduler
+
+
+        class_labels = torch.zeros((n,), device=self.device, dtype=torch.int32).fill_(1 if unconditional else 0)
+
+
+        
+        if do_cfg and controlnet_both_sides:
+            class_labels = torch.cat([class_labels, torch.zeros_like(class_labels)], dim=0)
+    
+
+            
+        if do_cfg:
+            print('CFG')
+
+            if controlnet_both_sides:
+                input_ids = self.tokenizer(
+                input_prompts + input_prompts, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+                ).input_ids.cuda()
+                encoder_hidden_states = self.text_encoder(input_ids)[0].cuda()
+            else:
+                input_ids = self.tokenizer(
+                input_prompts + [""]*n, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+                ).input_ids.cuda()
+                encoder_hidden_states = self.text_encoder(input_ids)[0].cuda()
+                input_ids = self.tokenizer(
+                input_prompts , max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+                ).input_ids.cuda()
+                controlnet_encoder_hidden_states = self.text_encoder(input_ids)[0].cuda()
+                
+                
+
+                
+
+        else:
+            input_ids = self.tokenizer(
+                input_prompts, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+            ).input_ids.cuda()
+            
+            encoder_hidden_states = self.text_encoder(input_ids)[0].cuda()
+        
+
+        if unconditional:
+            if self.zero_uncond:
+                conditioning_pixel_values = torch.zeros_like(conditioning_pixel_values)
+            else:
+                conditioning_pixel_values = torch.rand_like(conditioning_pixel_values)
+
+        if do_cfg and controlnet_both_sides:
+            if self.zero_uncond:
+                unconditioning_pixel_values = torch.zeros_like(conditioning_pixel_values)
+            else:
+                unconditioning_pixel_values = torch.rand_like(conditioning_pixel_values)
+            conditioning_pixel_values = torch.cat([conditioning_pixel_values, unconditioning_pixel_values], dim=0)
+
+        controlnet_image = conditioning_pixel_values.to(dtype=self.weight_dtype)
+
+        weight_dtype = self.weight_dtype
+        class ControlNetDenoiser(K.external.DiscreteEpsDDPMDenoiser):
+            """A wrapper for CompVis diffusion models."""
+
+            def __init__(self, controlnet, unet, alphas_cumprod, cfg, quantize=False, device='cpu'):
+                super().__init__(unet, alphas_cumprod, quantize=quantize)
+                self.controlnet = controlnet
+                self.cfg = cfg
+                
+            def get_eps(self, *args, **kwargs):
+
+
+                #eps_all = self.inner_model(sample, t, encoder_hidden_states=kwargs['encoder_hidden_states']).sample
+
+                if do_cfg and controlnet_both_sides:
+
+                    sample = torch.cat([args[0]]*2, dim=0)
+                    t = torch.cat([args[1]]*2, dim=0)
+
+                    print(sample.shape, t.shape, encoder_hidden_states.shape, class_labels.shape, controlnet_image.shape)
+                    down_block_res_samples, _ = self.controlnet(
+                        sample,
+                        t,
+                        encoder_hidden_states=encoder_hidden_states,
+                        class_labels=class_labels,
+                        controlnet_cond=controlnet_image,
+                        return_dict=False,
+                    )
+
+                
+                    # Predict the noise residual
+                    eps_all = self.inner_model(
+                        sample,
+                        t,
+                        encoder_hidden_states=encoder_hidden_states,
+                        down_block_additional_residuals=[
+                            sample.to(dtype=weight_dtype) for sample in down_block_res_samples
+                        ],
+                    ).sample
+                    eps, eps_uc = eps_all.chunk(2)
+    
+                    return eps*self.cfg - eps_uc*(self.cfg-1)
+                    
+
+                elif do_cfg:
+                    down_block_res_samples, _ = self.controlnet(
+                        args[0],
+                        args[1],
+                        encoder_hidden_states=controlnet_encoder_hidden_states,
+                        #encoder_hidden_states=encoder_hidden_states,
+                        class_labels=class_labels,
+                        controlnet_cond=controlnet_image,
+                        return_dict=False,
+                    )
+
+                    down_block_res_samples = [torch.cat([d, torch.zeros_like(d)]) for d in down_block_res_samples]
+                    sample = torch.cat([args[0]]*2, dim=0)
+                    t = torch.cat([args[1]]*2, dim=0)
+
+                
+                    # Predict the noise residual
+                    eps_all = self.inner_model(
+                    sample,
+                    t,
+                    encoder_hidden_states=encoder_hidden_states,
+                    down_block_additional_residuals=[
+                        sample.to(dtype=weight_dtype) for sample in down_block_res_samples
+                    ],
+            #mid_block_additional_residual=mid_block_res_sample.to(dtype=self.weight_dtype),
+                    ).sample
+                    eps, eps_uc = eps_all.chunk(2)
+    
+                    return eps*self.cfg - eps_uc*(self.cfg-1)
+                else:
+                    sample = args[0]
+                    t = args[1]
+
+                    down_block_res_samples, _ = self.controlnet(
+                        sample,
+                        t,
+                        encoder_hidden_states=encoder_hidden_states,
+                        class_labels=class_labels,
+                        controlnet_cond=controlnet_image,
+                        return_dict=False,
+                    )
+
+
+                    eps = self.inner_model(
+                    sample,
+                    t,
+                    encoder_hidden_states=encoder_hidden_states,
+                    down_block_additional_residuals=[
+                        sample.to(dtype=weight_dtype) for sample in down_block_res_samples
+                    ],
+            #mid_block_additional_residual=mid_block_res_sample.to(dtype=self.weight_dtype),
+                    ).sample
+                    return eps
+                    
+        model = ControlNetDenoiser(self.controlnet, self.unet, torch.tensor(noise_scheduler.alphas_cumprod.numpy()), cfg)
+                        
+        model = model.to(self.device)
+
+        sigmas = model.get_sigmas(sampling_timesteps)
+        print('sigmas', sigmas)
+        random_sigmas =  torch.exp(-1.2 + 1.2*torch.randn((100,)))
+        print('random sigmas', random_sigmas)
+
+            
+        """
+        down_block_res_samples, mid_block_res_sample = self.controlnet(
+            noisy_latents,
+            timesteps,
+            encoder_hidden_states=encoder_hidden_states,
+            controlnet_cond=controlnet_image,
+            return_dict=False,
+        )
+        """
+
+        """
+
+
+        """
+        progress = []
+
+        def callback(u):
+            progress.append(u['denoised'])
+        
+        def sample_fn(n):
+            x = torch.randn([n, 4, 16, 16], device=self.device) * sigmas[0]
+            x_0 = K.sampling.sample_euler(model, x, sigmas, s_tmin=0., s_tmax=float('inf'), s_noise=1.000, s_churn=churn*(40/256)*sampling_timesteps, extra_args={'encoder_hidden_states': encoder_hidden_states}, callback=callback)
+            return x_0
+            
+        x_0 = sample_fn(n)
+        progress.append(x_0)
+        
+        print(x_0.min(), x_0.max(), x_0.mean(), x_0.var())
+            
+        progress = [ self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0] for latents in progress]
+        #print([p.shape for p in progress])
+        progress = torch.stack(progress, dim=0)
+        #print(progress.shape)
+
+        controlnet.train()
+        
         return progress
 

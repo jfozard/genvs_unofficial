@@ -29,7 +29,7 @@ from sd_pipeline import SDPipeline
 class NerfDiff(nn.Module):
     def __init__(self):
         super().__init__()
-        self.sd_pipeline = SDPipeline(cond_channels=3, unlock_up_blocks=True, cfg=2.0)
+        self.sd_pipeline = SDPipeline(cond_channels=3, unlock_up_blocks=True, cfg=1.0)
 
 
 def losses(model, data):
@@ -62,7 +62,7 @@ def sample(model, data, unconditional=False):
     input_ids = ['a car']*bsz
 
 
-    samples = model.sd_pipeline.sample(targets, unconditional=unconditional)
+    samples = model.sd_pipeline.sample_all(targets, unconditional=unconditional)
 
 
     return targets, samples
@@ -74,7 +74,7 @@ def train(rank, world_size, transfer=""):
     step = 0
     num_epochs = 801
     image_size = 128
-    batch_size = 32
+    batch_size = 4#32
     acc_steps = 16
 
 
@@ -160,12 +160,15 @@ def train(rank, world_size, transfer=""):
 
 #                output = np.concatenate((np.concatenate((0.5*(img1.cpu().detach().numpy()[0].transpose(1,2,0)+1), v1.cpu().detach().numpy()[0].transpose(1,2,0), torch.clip(d1,0,1).cpu().detach().numpy()[0].transpose(1,2,0), torch.clip(o1,0,1).cpu().detach().numpy()[0].transpose(1,2,0)), axis=1),
 #                                          np.concatenate((0.5*(img2.cpu().detach().numpy()[0].transpose(1,2,0)+1), v2.cpu().detach().numpy()[0].transpose(1,2,0), torch.clip(d2,0,1).cpu().detach().numpy()[0].transpose(1,2,0), torch.clip(o2,0,1).cpu().detach().numpy()[0].transpose(1,2,0)), axis=1)), axis=0)
-                
+
+                samples = 0.5*(samples+1)
+
                 for k in range(len(samples)):
-                    output = np.concatenate(((255*targets.cpu().detach().numpy()[k%len(targets)].transpose(1,2,0)).astype(np.uint8), samples[k]), axis=1)
+                    for j in range(samples.shape[1]):
+                        output = np.concatenate(((255*targets.cpu().detach().numpy()[k%len(targets)].transpose(1,2,0)).astype(np.uint8), (255*samples.clip(0,1).cpu().detach().numpy()[k,j].transpose(1,2,0)).astype(np.uint8)), axis=1)
 
 
-                    imwrite(f'copy-blur-{step:06d}-{k}.png', (output).astype(np.uint8))
+                        imwrite(f'copy-blur-{step:06d}-{j}-{k}.png', (output).astype(np.uint8))
 
                 targets, samples = sample(model, data, unconditional=True)
 
@@ -173,7 +176,7 @@ def train(rank, world_size, transfer=""):
 #                                          np.concatenate((0.5*(img2.cpu().detach().numpy()[0].transpose(1,2,0)+1), v2.cpu().detach().numpy()[0].transpose(1,2,0), torch.clip(d2,0,1).cpu().detach().numpy()[0].transpose(1,2,0), torch.clip(o2,0,1).cpu().detach().numpy()[0].transpose(1,2,0)), axis=1)), axis=0)
                 
                 for k in range(len(samples)):
-                    output = np.concatenate(((255*targets.cpu().detach().numpy()[k%len(targets)].transpose(1,2,0)).astype(np.uint8), samples[k]), axis=1)
+                    output = np.concatenate(((255*targets.cpu().detach().numpy()[k%len(targets)].transpose(1,2,0)).astype(np.uint8), (255*samples.cpu().detach().numpy()[k,0].transpose(1,2,0)).astype(np.uint8)), axis=1)
 
 
                     imwrite(f'copy-blur-uc-{step:06d}-{k}.png', (output).astype(np.uint8))
