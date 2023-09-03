@@ -43,7 +43,7 @@ class _RepeatSampler(object):
 
 class dataset(Dataset):
     
-    def __init__(self, split, path='data/cars_train/', picklefile='data/cars.pickle', imgsize=128, nerf_view=None, normalize_first_view=True, nimg=4, seed=1, first_view=None):
+    def __init__(self, split, path='data/cars_train/', picklefile='data/cars.pickle', imgsize=128, nerf_view=None, normalize_first_view=True, nimg=4, seed=1, first_view=None, idx_offset=0):
         self.imgsize = imgsize
         self.path = path
         super().__init__()
@@ -65,7 +65,8 @@ class dataset(Dataset):
         self.normalize_first_view = normalize_first_view
         self.first_view=first_view
 
-        print('first_view', first_view)
+        self.idx_offset = idx_offset
+        
         
     def __len__(self):
         return len(self.ids)
@@ -76,8 +77,9 @@ class dataset(Dataset):
         if self.nerf_view:
             idx, first = self.nerf_view
 
-        item = self.ids[idx]
+        item = self.ids[(idx+self.idx_offset)%len(self.ids)]
 
+        
         intrinsics_filename = os.path.join(self.path, item, 'intrinsics', self.picklefile[item][0][:-4] + ".txt")
         K = np.array(open(intrinsics_filename).read().strip().split()).astype(float).reshape((3,3))
 

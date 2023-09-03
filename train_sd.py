@@ -55,7 +55,7 @@ from k_pipeline import KPipeline
 
 from k_diffusion.augmentation import KarrasDiffAugmentationPipeline
 
-output_dir = 'output_sd_restart2/'
+output_dir = 'output_sd_restart3/'
 os.makedirs(output_dir, exist_ok=True)
 
 def setup(rank, world_size):
@@ -201,7 +201,7 @@ def train(rank, world_size, cfg):
     image_size = cfg.image_size
     batch_size = cfg.batch_size
     acc_steps = cfg.gradient_accumulation_steps
-    n_sample = 1#cfg.sample_every_n_steps
+    n_sample = cfg.sample_every_n_steps
     combine = cfg.combine
 
     epochs_plot_loss = cfg.epochs_checkpoint

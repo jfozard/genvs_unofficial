@@ -300,7 +300,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
             imwrite(f'{output_path}/{prefix}-conditioning-{cond_views}-{step:06d}.png', output)
 
             print('rovs', render_output_views.shape)
-            for j in range(render_output_views.shape[0]-1):
+            for j in range(0, render_output_views.shape[0]-1, (render_output_views.shape[0])//10):
 
                 na = render_output_views.shape[2]
                 output = render_output_views[j,0]
