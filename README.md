@@ -340,6 +340,113 @@ https://github.com/jfozard/genvs_unofficial/assets/4390954/62459e67-7fb5-4520-97
 
 https://github.com/jfozard/genvs_unofficial/assets/4390954/3f27a10d-09b0-4b1d-a220-5b7d737d3b1b
 
+## Additional approach - ControlNet built on segmind/tiny-sd
+
+In branch controlnet, find an alternative approach where a Stable Diffusion ControlNet, using the compressed architecture of segmind/tiny-sd, 
+https://huggingface.co/segmind/tiny-sd (based on https://arxiv.org/abs/2305.15798) to replace the denoising diffusion model.
+
+Denoising diffusion model pretrained on ShapeNet cars, image -> NeRF model taken from earlier model above.
+Further trained on ShapeNet cars for ~150 epochs.
+
+Checkpoint available at https://huggingface.co/JFoz/genvs_control
+
+Sampling as for earlier model, but Classifier Free Guidance with cfg>1 required for good results.
+Code also contains a (probably buggy) wrapper permitting use of the k-diffusion samplers (with non zero churn) with such controlnets.
+ControlNet has an additional class input 0=conditioned on NeRF output 1=unconditional.
+
+Samples shown with cfg=2, churn=40/250 (stochastic sampling), churn=0 (deterministic sampling). Autogregressive sampling with cfg=2, churn=0.
+All with 100 timesteps, Karras schedule. 
+
+### Stochastic, non-autoregressive
+
+Car 0
+
+![Acars-conditioning-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/e2007914-764e-4f3b-8357-c1f5a65492b2)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/87df318e-1bc2-493d-9bb9-9817a0b2a453
+
+Sampling
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/6982a9d5-16f7-48f4-add5-cf57054b3c92
+
+Car 1
+
+![Acars-conditioning-1-000001](https://github.com/jfozard/genvs_unofficial/assets/4390954/3dd8b371-f15f-43f5-b9b7-6c8177b711b0)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/99ca42b0-4d98-4e3c-9502-2179e2d2e8a3
+
+Car 2
+
+![Acars-conditioning-1-000002](https://github.com/jfozard/genvs_unofficial/assets/4390954/763ba500-7d98-4a84-b797-71abf1843a77)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/6dbd16b7-4a0b-41b0-92fc-3e12683b6c00
+
+Car 3
+
+![Acars-conditioning-1-000003](https://github.com/jfozard/genvs_unofficial/assets/4390954/0b3ffb93-5525-4adb-93c0-4aea6cf85601)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/ed5c7707-8ea2-4348-84e5-99f10f038e7f
+
+### Deterministic
+
+Car 0
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/509c21d6-da9b-423a-91c2-788e21248ce9
+
+Car 1
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/459d40a4-bbf5-4bdd-ba4e-a11a173a2593
+
+### Unconditional
+
+![100_uc_2 0_1 0-final-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/2776630c-8c46-4948-8e0d-363cfd1b374a)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/d875aa1f-eed8-4294-8355-168b2e70e2e1
+
+### Autoregressive
+
+(Initial conditioning on first frame of video)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/2c79fbd2-7aee-400e-a20b-74e1c5e35084
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/78edec8a-559f-42b0-9a57-4106736b4df7
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/dee0330a-0701-48eb-a726-8e42724f12a2
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/e6b7a33a-51ef-45fc-902a-1e49a093e308
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/3e8008b5-e905-4bc8-98ac-1deb4f26f89f
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/f699bb69-ac77-479f-ad9a-6f7dfc64066d
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## TODO
 
