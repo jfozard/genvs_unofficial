@@ -59,7 +59,7 @@ def cleanup():
 
 
 @torch.no_grad()
-def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True, unconditional=False, sample_view_batch=2, sampler_name="unipc", steps=50, cfg=1, churn=0.0):
+def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True, unconditional=False, sample_view_batch=2, sampler_name="unipc", steps=50, cfg=1, churn=0.0, n_poses=10):
     # model - NerfDiff model
     # data - dataset batch 
     # source_view_idx - list of view indicies used to generate NeRF
@@ -98,7 +98,7 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
 
     
     ref_pose = poses[:,0]
-    sphere_poses = generate_spherical_cam_to_world(camera_d[0].cpu(), n_poses=10)
+    sphere_poses = generate_spherical_cam_to_world(camera_d[0].cpu(), n_poses=n_poses)
   
     poses = torch.tensor(sphere_poses[None]).cuda()
 
@@ -223,7 +223,7 @@ def convert_and_make_grid(views):
     
 
 
-def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  prefix="cars", stochastic=False, unconditional=False, n_samples=10, seed=1234, sampler_name="unipc", steps=50, cfg=1, churn=0.0, use_wandb = False):
+def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  prefix="cars", stochastic=False, unconditional=False, n_samples=10, seed=1234, sampler_name="unipc", steps=50, cfg=1, churn=0.0, offset=0, n_poses=10, use_wandb = False):
 
     torch.manual_seed(seed)
     random.seed(seed)
@@ -248,7 +248,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
 
 
 
-    d = dataset('test', imgsize=image_size, nimg=None, normalize_first_view=False)
+    d = dataset('test', imgsize=image_size, nimg=None, normalize_first_view=False, idx_offset=offset)
     
     sampler, loader = prepare(rank, world_size, d, batch_size=batch_size)
 
@@ -290,7 +290,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
             cleanup()
             return
 
-        original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities = sample_sphere(model, data, cond_view_list, progress=progress, stochastic=stochastic, unconditional=unconditional, sampler_name=sampler_name, steps=steps, cfg=cfg, churn=churn)
+        original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities = sample_sphere(model, data, cond_view_list, progress=progress, stochastic=stochastic, unconditional=unconditional, sampler_name=sampler_name, steps=steps, cfg=cfg, churn=churn, n_poses=n_poses)
 
         if progress:
             conditioning_views = original_views
@@ -300,7 +300,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  
             imwrite(f'{output_path}/{prefix}-conditioning-{cond_views}-{step:06d}.png', output)
 
             print('rovs', render_output_views.shape)
-            for j in range(0, render_output_views.shape[0]-1, (render_output_views.shape[0])//10):
+            for j in range(0, render_output_views.shape[0]-1):#, (render_output_views.shape[0])//10):
 
                 na = render_output_views.shape[2]
                 output = render_output_views[j,0]
@@ -372,7 +372,9 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=1234)
     parser.add_argument('--cfg', type=float, default=1)
     parser.add_argument('--churn', type=float, default=0.0)
+    parser.add_argument('--offset', type=int, default=0)
+    parser.add_argument('--n_poses', type=int, default=10)
     args = parser.parse_args()
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus
-    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.progress, args.prefix, args.stochastic, args.unconditional, args.n, args.seed, args.sampler, args.steps, args.cfg, args.churn), nprocs=world_size, join=True)
+    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.progress, args.prefix, args.stochastic, args.unconditional, args.n, args.seed, args.sampler, args.steps, args.cfg, args.churn, args.offset, args.n_poses), nprocs=world_size, join=True)

@@ -100,7 +100,7 @@ def generate_circle_poses(ref_pose, radius, n_poses=120, d_th=-5, d_phi=-5):
 
 
 @torch.no_grad()
-def sample_sphere_ar(model, data, source_view_idx, sample_view_batch=2, n_itm=1):
+def sample_sphere_ar(model, data, source_view_idx,  steps=50, cfg=2.0, churn=0.0, n_poses=200, sample_view_batch=2, n_itm=1):
     # model - NerfDiff model
     # data - dataset batch 
     # source_view_idx - list of view indicies used to generate NeRF
@@ -125,7 +125,7 @@ def sample_sphere_ar(model, data, source_view_idx, sample_view_batch=2, n_itm=1)
     render_output_opacities = []
 
     ref_pose = poses[:,0]
-    sphere_poses = generate_circle_poses(data['poses'][0, source_view_idx[0]].numpy(), camera_d[0].cpu(), n_poses=200)
+    sphere_poses = generate_circle_poses(data['poses'][0, source_view_idx[0]].numpy(), camera_d[0].cpu(), n_poses=n_poses)
   
     poses = torch.tensor(sphere_poses[None]).cuda()
 
@@ -181,7 +181,8 @@ def sample_sphere_ar(model, data, source_view_idx, sample_view_batch=2, n_itm=1)
         render_output_opacities.append(o1.cpu())
         render_rgb_views.append(first_view_rgb.cpu())
 
-        samples1 = model.module.sd_pipeline.sample(first_view.view(B*QQ, *first_view.shape[2:]))
+        samples1 = model.module.sd_pipeline.sample_k(first_view.view(B*QQ, *first_view.shape[2:]), sampling_timesteps=steps, cfg=cfg, churn=churn)
+        print('samples range', samples1.min(), samples1.max())
         samples1 = torch.tensor([np.array(t).transpose((2,0,1))/255.0 for t in samples1], dtype=torch.float32)
         samples1 = samples1.view(B, QQ, *samples1.shape[1:])
         print('s1 shape', samples1.shape)
@@ -263,7 +264,7 @@ def convert_and_make_grid(views):
     
 
 
-def sample_images(rank, world_size, transfer="",   cond_views=1, prefix="cars", use_wandb = False):
+def sample_images(rank, world_size, transfer="", cond_views=1, prefix="cars", steps=50, n=1, cfg=1, churn=0.0, offset=0, n_poses=10, use_wandb = False):
 
     setup(rank, world_size)
 
@@ -282,11 +283,11 @@ def sample_images(rank, world_size, transfer="",   cond_views=1, prefix="cars", 
     step = 0
     image_size = 128
     batch_size = 1
-    n_samples = 10
+    n_samples = n
 
 
 
-    d = dataset('test', imgsize=image_size, nimg=4, normalize_first_view=False, first_view=0)
+    d = dataset('test', imgsize=image_size, nimg=4, normalize_first_view=False, first_view=0, idx_offset=offset)
     
     sampler, loader = prepare(rank, world_size, d, batch_size=batch_size)
 
@@ -296,7 +297,7 @@ def sample_images(rank, world_size, transfer="",   cond_views=1, prefix="cars", 
     model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model = DDP(model, device_ids=[rank], output_device=rank)
-    
+
     use_amp=False
 
     scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
@@ -328,7 +329,8 @@ def sample_images(rank, world_size, transfer="",   cond_views=1, prefix="cars", 
             cleanup()
             return
 
-        original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities = sample_sphere_ar(model, data, cond_view_list)
+        original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities = sample_sphere_ar(model, data, cond_view_list, steps=steps, cfg=cfg, churn=churn, n_poses=n_poses)
+
 
         conditioning_views = original_views
         output = np.concatenate([v.numpy().transpose(1,2,0) for v in conditioning_views[0,:]])
@@ -352,14 +354,22 @@ def sample_images(rank, world_size, transfer="",   cond_views=1, prefix="cars", 
     cleanup()
 
 
-os.makedirs('output_view_sd/', exist_ok=True)
+output_path = 'output_view_sd/'
+os.makedirs(output_path, exist_ok=True)
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--transfer',type=str, default="")
     parser.add_argument('--cond_views',type=int, default=1)
     parser.add_argument('--prefix',type=str, default="cars")
+    parser.add_argument('--steps', type=int, default=50)
+    parser.add_argument('--n', type=int, default=1)
+    parser.add_argument('--seed', type=int, default=1234)
+    parser.add_argument('--cfg', type=float, default=1)
+    parser.add_argument('--churn', type=float, default=0.0)
+    parser.add_argument('--offset', type=int, default=0)
+    parser.add_argument('--n_poses', type=int, default=10)
     args = parser.parse_args()
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus
-    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.prefix), nprocs=world_size, join=True)
+    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.prefix, args.steps, args.n, args.cfg, args.churn, args.offset, args.n_poses), nprocs=world_size, join=True)
