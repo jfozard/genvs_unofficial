@@ -336,7 +336,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, output_path=".", 
         output = np.concatenate([v.numpy().transpose(1,2,0) for v in conditioning_views[0,:]])
         output = (255*np.clip(output,0,1)).astype(np.uint8)
 
-        imwrite(f'output_view_sd/{prefix}-conditioning-ar-{cond_views}-{step:06d}.png', output)
+        imwrite(f'{output_path}/{prefix}-conditioning-ar-{cond_views}-{step:06d}.png', output)
 
         
         for k in range(render_output_views.shape[1]):
@@ -346,7 +346,7 @@ def sample_images(rank, world_size, transfer="", cond_views=1, output_path=".", 
             output = convert_and_make_grid((render_output_views[0,k], render_rgb_views[0,k], render_output_depth[0,k], render_output_opacities[0,k]))
             
             output = (255*np.clip(output,0,1)).astype(np.uint8)
-            imwrite(f'output_view_sd/{prefix}-sample-ar-{cond_views}-{step:06d}-{k}.png', output)
+            imwrite(f'{output_path}/{prefix}-sample-ar-{cond_views}-{step:06d}-{k}.png', output)
 
         del original_views, render_output_views, render_rgb_views, render_output_depth, render_output_opacities
 
