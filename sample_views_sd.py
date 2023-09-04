@@ -223,7 +223,7 @@ def convert_and_make_grid(views):
     
 
 
-def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  prefix="cars", stochastic=False, unconditional=False, n_samples=10, seed=1234, sampler_name="unipc", steps=50, cfg=1, churn=0.0, offset=0, n_poses=10, use_wandb = False):
+def sample_images(rank, world_size, transfer="", cond_views=1, progress=False,  output_path=".", prefix="cars", stochastic=False, unconditional=False, n_samples=10, seed=1234, sampler_name="unipc", steps=50, cfg=1, churn=0.0, offset=0, n_poses=10, use_wandb = False):
 
     torch.manual_seed(seed)
     random.seed(seed)
@@ -362,6 +362,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--transfer',type=str, default="")
     parser.add_argument('--cond_views',type=int, default=1)
+    parser.add_argument('--output_path',type=str, default=".")
     parser.add_argument('--prefix',type=str, default="cars")
     parser.add_argument('--progress', action="store_true")
     parser.add_argument('--stochastic', action="store_true")
@@ -377,4 +378,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus
-    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.progress, args.prefix, args.stochastic, args.unconditional, args.n, args.seed, args.sampler, args.steps, args.cfg, args.churn, args.offset, args.n_poses), nprocs=world_size, join=True)
+
+    output_path = args.output_path
+    os.makedirs(output_path, exist_ok=True)
+
+    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.progress, args.output_path, args.prefix, args.stochastic, args.unconditional, args.n, args.seed, args.sampler, args.steps, args.cfg, args.churn, args.offset, args.n_poses), nprocs=world_size, join=True)

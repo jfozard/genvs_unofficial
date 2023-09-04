@@ -264,7 +264,7 @@ def convert_and_make_grid(views):
     
 
 
-def sample_images(rank, world_size, transfer="", cond_views=1, prefix="cars", steps=50, n=1, cfg=1, churn=0.0, offset=0, n_poses=10, use_wandb = False):
+def sample_images(rank, world_size, transfer="", cond_views=1, output_path=".", prefix="cars", steps=50, n=1, cfg=1, churn=0.0, offset=0, n_poses=10, use_wandb = False):
 
     setup(rank, world_size)
 
@@ -354,12 +354,11 @@ def sample_images(rank, world_size, transfer="", cond_views=1, prefix="cars", st
     cleanup()
 
 
-output_path = 'output_view_sd/'
-os.makedirs(output_path, exist_ok=True)
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--transfer',type=str, default="")
+    parser.add_argument('--output_path',type=str, default=".")
     parser.add_argument('--cond_views',type=int, default=1)
     parser.add_argument('--prefix',type=str, default="cars")
     parser.add_argument('--steps', type=int, default=50)
@@ -372,4 +371,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     n_gpus = torch.cuda.device_count()
     world_size = n_gpus
-    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.prefix, args.steps, args.n, args.cfg, args.churn, args.offset, args.n_poses), nprocs=world_size, join=True)
+
+    output_path = args.output_path
+    os.makedirs(output_path, exist_ok=True)
+
+
+    mp.spawn(sample_images, args=(world_size,args.transfer, args.cond_views, args.output_path, args.prefix, args.steps, args.n, args.cfg, args.churn, args.offset, args.n_poses), nprocs=world_size, join=True)
