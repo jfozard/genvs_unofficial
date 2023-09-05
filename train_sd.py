@@ -23,7 +23,7 @@ from torch.optim import  AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 import torch.nn.functional as F
 from NERFdataset_k import dataset
-from genvs_model_sd import NerfDiffDLV3
+from genvs_model_sd_mv import NerfDiffDLV3
 from nerf.utils import render_multi_view
 import torch.nn as nn
 
@@ -55,7 +55,7 @@ from k_pipeline import KPipeline
 
 from k_diffusion.augmentation import KarrasDiffAugmentationPipeline
 
-output_dir = 'output_sd_restart3/'
+output_dir = 'output_sd_multi/'
 os.makedirs(output_dir, exist_ok=True)
 
 def setup(rank, world_size):
@@ -156,7 +156,7 @@ def sample(model, data, nv):
     d1 = d1 - d1.min()
     d1 = d1/d1.max()
 
-    samples1 = model.module.sd_pipeline.sample(first_view.view(B*Q, *first_view.shape[2:]))
+    samples1 = model.module.sd_pipeline.sample(first_view.view(B*Q, *first_view.shape[2:]), cfg=2)
 
 
 #    return targets[:,0], first_view_rgb[:,0], d1[:,0], o1[:,0], targets[:,1], first_view_rgb[:,1], d1[:,1], o1[:,1], samples1 #torch.cat((samples1, samples2), dim=0)
@@ -201,7 +201,7 @@ def train(rank, world_size, cfg):
     image_size = cfg.image_size
     batch_size = cfg.batch_size
     acc_steps = cfg.gradient_accumulation_steps
-    n_sample = cfg.sample_every_n_steps
+    n_sample = 1#cfg.sample_every_n_steps
     combine = cfg.combine
 
     epochs_plot_loss = cfg.epochs_checkpoint
@@ -230,7 +230,8 @@ def train(rank, world_size, cfg):
 
     use_amp=cfg.use_amp
     #optimizer = AdamW([{'params':model.module.input_unet.parameters(), 'lr':1e-4}, {'params':model.module.nerf.parameters(), 'lr':2e-4}, {'params':model.module.ddpm_pipeline.parameters(), 'lr':1e-5}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2) # NERF
-    optimizer = AdamW([{'params':model.module.input_unet.parameters(), 'lr':cfg.lr_in}, {'params':model.module.nerf.parameters(), 'lr':cfg.lr_nerf}, {'params':model.module.sd_pipeline.parameters(), 'lr':cfg.lr_diff}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2) # NERF
+    #optimizer = AdamW([{'params':model.module.input_unet.parameters(), 'lr':cfg.lr_in}, {'params':model.module.nerf.parameters(), 'lr':cfg.lr_nerf}, {'params':model.module.sd_pipeline.parameters(), 'lr':cfg.lr_diff}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2) # NERF
+    optimizer = AdamW([{'params':model.module.sd_pipeline.parameters(), 'lr':cfg.lr_diff}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2) # NERF
 #    optimizer = AdamW([{'params':model.module.input_unet.parameters(), 'lr':1e-4}, {'params':model.module.nerf.parameters(), 'lr':2e-4}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2) # NERF
     scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
@@ -422,7 +423,7 @@ def train(rank, world_size, cfg):
             
 
     
-@hydra.main(version_base="1.2", config_path="config", config_name="config_sd_resume")
+@hydra.main(version_base="1.2", config_path="config", config_name="config_sd_multi")
 def main(cfg : DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
     n_gpus = torch.cuda.device_count()
