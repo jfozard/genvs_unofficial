@@ -219,7 +219,7 @@ class NerfDiffDLV3(nn.Module):
 
         if self.lambda_diffusion:
             #cond_flag = 0 if random.random()>self.no_cond_prob else 1 # 10% chance of conditioning being replaced by noise
-            cond_flag = torch.zeros((B,Q))<self.no_cond_prob
+            cond_flag = torch.rand((B,Q))<self.no_cond_prob
             
             mat, cond = self.diff_aug.get_mat_cond(first_view[:,0]) # Get the conditioning vector size
             cond = torch.zeros_like(cond)                            # Zero out conditioning vector

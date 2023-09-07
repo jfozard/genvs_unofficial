@@ -1,4 +1,3 @@
-import math
 
 from scipy import integrate
 import torch
@@ -133,6 +132,32 @@ def sample_euler(model, x, sigmas, extra_args=None, callback=None, disable=None,
         # Euler method
         x = x + d * dt
     return x
+
+@torch.no_grad()
+def sample_euler_guided(model, x, g, sigmas, extra_args=None, callback=None, disable=None, s_churn=0., s_tmin=0., s_tmax=float('inf'), s_noise=1.):
+    """Implements Algorithm 2 (Euler steps) from Karras et al. (2022)."""
+    extra_args = {} if extra_args is None else extra_args
+    s_in = x.new_ones([x.shape[0]+g.shape[0]])
+    for i in trange(len(sigmas) - 1, disable=disable):
+        gamma = min(s_churn / (len(sigmas) - 1), 2 ** 0.5 - 1) if s_tmin <= sigmas[i] <= s_tmax else 0.
+        eps = torch.randn_like(x) * s_noise
+        sigma_hat = sigmas[i] * (gamma + 1)
+        if gamma > 0:
+            x = x + eps * (sigma_hat ** 2 - sigmas[i] ** 2) ** 0.5
+
+        g_noised = g + sigma_hat*torch.randn_like(g)
+
+        print(g_noised.shape, x.shape)
+
+        denoised = model(torch.cat([g_noised,x], dim=0), sigma_hat * s_in, **extra_args)[g.shape[0]:]
+        d = to_d(x, sigma_hat, denoised)
+        if callback is not None:
+            callback({'x': x, 'i': i, 'sigma': sigmas[i], 'sigma_hat': sigma_hat, 'denoised': denoised})
+        dt = sigmas[i + 1] - sigma_hat
+        # Euler method
+        x = x + d * dt
+    return x
+
 
 
 @torch.no_grad()

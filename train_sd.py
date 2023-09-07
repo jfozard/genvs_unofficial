@@ -88,7 +88,8 @@ def prepare(rank, world_size, dataset, batch_size=32, pin_memory=False, num_work
     Returns:
     sampler (DistributedSampler), dataloader (DataLoader): The prepared sampler and dataloader.
     """
-    sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=True)
+    # Note shuffle
+    sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=False, drop_last=True)
     
     dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, drop_last=True, sampler=sampler)
     
@@ -156,8 +157,9 @@ def sample(model, data, nv):
     d1 = d1 - d1.min()
     d1 = d1/d1.max()
 
-    samples1 = model.module.sd_pipeline.sample(first_view.view(B*Q, *first_view.shape[2:]), cfg=2)
+    samples1 = model.module.sd_pipeline.sample_k(first_view.view(B*Q, *first_view.shape[2:]), cfg=3)
 
+    print('samples1', samples1.shape)
 
 #    return targets[:,0], first_view_rgb[:,0], d1[:,0], o1[:,0], targets[:,1], first_view_rgb[:,1], d1[:,1], o1[:,1], samples1 #torch.cat((samples1, samples2), dim=0)
     return targets[:,:Q], first_view_rgb, d1, o1, samples1 #torch.cat((samples1, samples2), dim=0)
@@ -308,7 +310,7 @@ def train(rank, world_size, cfg):
         print('LR', [p['lr'] for p in optimizer.param_groups])
         lt = time.time()
 
-        sampler.set_epoch(e)
+        #sampler.set_epoch(e)
 
         # For each sample in the dataset
         pbar = tqdm(loader)
@@ -373,20 +375,20 @@ def train(rank, world_size, cfg):
                     d1 = stack_img(d1)
                     o1 = stack_img(o1)
                     
-                    print('img1', img1.shape)
+                    print('img1', img1.shape, 'samples', samples.shape)
                     for k in range(len(img1)):
 #                        output = np.concatenate((np.concatenate((img1.cpu().detach().numpy()[k].transpose(1,2,0), v1.cpu().detach().numpy()[k].transpose(1,2,0), torch.clip(d1,0,1).cpu().detach().numpy()[k].transpose(1,2,0), torch.clip(o1,0,1).cpu().detach().numpy()[k].transpose(1,2,0)), axis=1),
 #                                            np.concatenate((img2.cpu().detach().numpy()[k].transpose(1,2,0), v2.cpu().detach().numpy()[k].transpose(1,2,0), torch.clip(d2,0,1).cpu().detach().numpy()[k].transpose(1,2,0), torch.clip(o2,0,1).cpu().detach().numpy()[k].transpose(1,2,0)), axis=1)), axis=0)
                         output = np.concatenate((img1[k], v1[k], d1[k], o1[k]), axis=1)
 
                         output = (255*np.clip(output,0,1)).astype(np.uint8)
-                        imwrite(f'{output_dir}/full-{step:06d}-{vv}-{k}.png', output)
+                        imwrite(f'{output_dir}/full-mv-{step:06d}-{vv}-{k}.png', output)
                         if use_wandb:
                             formatted_images.append(wandb.Image(output, caption=f"{vv}-{k}"))
 
                     for i in range(len(samples)):
                         s = np.asarray(samples[i]) #(255*(samples[i].clip(0,1)).cpu().detach().numpy().transpose(1,2,0)).astype(np.uint8)
-                        imwrite(f'{output_dir}/sample-{step:06d}-{vv}-{i}.png', s)
+                        imwrite(f'{output_dir}/sample-mv-{step:06d}-{vv}-{i}.png', s)
                         if use_wandb:
                             formatted_images.append(wandb.Image(s, caption=f"sample-{vv}-{i}"))
 

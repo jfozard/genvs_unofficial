@@ -307,7 +307,7 @@ class SDPipeline(nn.Module):
         return snr
 
     @torch.no_grad()
-    def sample(self, conditioning_pixel_values, sampling_timesteps=50, stochastic=True, unconditional=False, cfg=5.0, sampler_name="ddpm"):
+    def sample(self, conditioning_pixel_values, sampling_timesteps=50, stochastic=True, unconditional=False, cfg=5.0, sampler_name="euler"):
 
         n = conditioning_pixel_values.shape[0]
 
