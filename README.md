@@ -348,6 +348,8 @@ https://huggingface.co/segmind/tiny-sd (based on https://arxiv.org/abs/2305.1579
 Denoising diffusion model pretrained on ShapeNet cars, image -> NeRF model taken from earlier model above.
 Further trained on ShapeNet cars for ~150 epochs.
 
+NOTE THAT DIFFUSERS NEEDS PATCHING TO ALLOW CONTROLNETS WITH TINY-SD (the lack of mid-block additional residuals makes it think it is a T2I-Adaptor).
+
 Checkpoint available at https://huggingface.co/JFoz/genvs_control
 
 Sampling as for earlier model, but Classifier Free Guidance with cfg>1 required for good results.
@@ -419,6 +421,93 @@ https://github.com/jfozard/genvs_unofficial/assets/4390954/3e8008b5-e905-4bc8-98
 
 https://github.com/jfozard/genvs_unofficial/assets/4390954/f699bb69-ac77-479f-ad9a-6f7dfc64066d
 
+## Multi-view denoising
+
+Motivated by a series of recent papers, notably 
+MVDream https://mv-dream.github.io/
+Viewset Diffusion https://szymanowiczs.github.io/viewset-diffusion.html
+and
+SyncDreamer https://liuyuan-pal.github.io/SyncDreamer/
+I further refined the model to denoise multiple views at the same time.
+
+This extends the "tiling" trick, used for Stable and to generate more consistent videos (see Text2VideoZero - https://github.com/Picsart-AI-Research/Text2Video-Zero , where self attention was extended to across the frames of the video).
+
+The model was trained to jointly denoise 4 random views at the same time - one or two supplied conditioning views, and two to three unseen views - with extended cross-attention.
+
+At inference time - for moderate number of views possible to denoise every view at once. However, for larger viewsets this is not possible.
+Strategy is to take some of the previously generated (noise-free) latents, and add the appropriate amount of noise to them for the current timestep.
+These are then concatenated with the noisy latents, and passed to the denoising UNet (with cross-frame attention). This tends to add consistency
+between views. For further consistency, for non-autoregressive sampling, the input view is always used as one of these views (as it is by far
+the easiest view to denoise). For autoregressive sampling, the conditioning views are used as the extra latents.
+
+### Stochastic, non-autoregressive sampling
+
+Car 0
+
+![Acars-conditioning-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/fc45a863-bb35-491f-a0d7-32ad48f4695f)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/fd0d0dd8-6fe6-49e3-91ab-0887e3608262
+
+Sampling
+
+Car 1
+
+![Acars-conditioning-1-000001](https://github.com/jfozard/genvs_unofficial/assets/4390954/5b02e5f1-22ce-4c9d-874f-ad0b270893fc)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/faa5663a-2c6e-4ccc-a951-c62add5468fb
+
+Sampling
+
+
+
+Car 2
+
+![Acars-conditioning-1-000002](https://github.com/jfozard/genvs_unofficial/assets/4390954/dc9f4932-1124-4f58-9113-196e1c7a1b39)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/f48be808-1f41-4ab0-bce4-3649dd12f997
+
+Car 3
+
+![Acars-conditioning-1-000003](https://github.com/jfozard/genvs_unofficial/assets/4390954/b9b5d3b7-cfef-45e6-b8a4-eccc2e06727c)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/889ad940-28a9-4a93-bcfb-990ba599f4e2
+
+CarB 0
+
+![Acars2-conditioning-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/0c5686c0-7f71-437b-87b8-20fa04e04201)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/10b07e28-18a8-4c12-b6cd-aa79bfe3cf30
+
+
+CarB 1
+
+![Acars2-conditioning-1-000001](https://github.com/jfozard/genvs_unofficial/assets/4390954/d20de564-0df7-4fd0-91be-e15aca78399a)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/a18fa245-66e1-4e8b-b975-dd771bb87cf8
+
+
+CarB 2
+
+![Acars2-conditioning-1-000002](https://github.com/jfozard/genvs_unofficial/assets/4390954/b7d4f99b-f23c-416c-ab11-c1b031c1fd13)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/6a1b1a22-220c-4952-b084-fdbba76601a3
+
+CarB 3
+
+![Acars2-conditioning-1-000003](https://github.com/jfozard/genvs_unofficial/assets/4390954/1222cf20-b4a7-47f1-8db6-5427edb3c8aa)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/ed4afea0-98ed-4446-af3f-322d730377f2
+
+
+### Unconditional samples
+
+Attention in groups of two (generated) images
+
+![100_uc_2 0_1 0-final-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/0d28f32f-06c9-4a7f-8346-f64b21bb121b)
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/7735a9e7-ad0c-40c4-8de4-4e910bdca9c5
+
+
 
 
 
@@ -469,6 +558,10 @@ https://github.com/jfozard/genvs_unofficial/assets/4390954/f699bb69-ac77-479f-ad
 
 - Similarly, obtain a decent k-diffusion model to fine-tune rather than train from
   scratch.
+
+- Explore using a T2I adapter rather than a big controlnet
+
+- Like SyncDreamer https://liuyuan-pal.github.io/SyncDreamer/ use the rendered image as an additional input to Zero123, rather than SD.
 
 ## Acknowledgements
 
