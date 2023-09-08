@@ -43,11 +43,11 @@ def setup(rank, world_size):
 
 def prepare(rank, world_size, dataset, batch_size=32, pin_memory=False, num_workers=0):
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=True, drop_last=True)
-    
+
     dataloader = DataLoader(dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, drop_last=True, sampler=sampler)
-    
+
     return sampler, dataloader
-    
+
 def cleanup():
     "Cleans up the distributed environment"
     dist.destroy_process_group()
@@ -61,12 +61,12 @@ def cleanup():
 @torch.no_grad()
 def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True, unconditional=False, sample_view_batch=2, sampler_name="unipc", steps=50, cfg=1, churn=0.0, n_poses=10):
     # model - NerfDiff model
-    # data - dataset batch 
+    # data - dataset batch
     # source_view_idx - list of view indicies used to generate NeRF
     # sample_view_batch - number of novel views to generate at the same time
     img = data['imgs'].cuda()
     targets = 0.5*(img+1)
-    
+
     targets = targets[:,source_view_idx]
 
     imagenet_stats = (torch.tensor([0.485, 0.456, 0.406]).cuda(), torch.tensor([0.229, 0.224, 0.225]).cuda())
@@ -96,10 +96,10 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
 
     print('poses', poses.shape, camera_d.shape)
 
-    
+
     ref_pose = poses[:,0]
     sphere_poses = generate_spherical_cam_to_world(camera_d[0].cpu(), n_poses=n_poses)
-  
+
     poses = torch.tensor(sphere_poses[None]).cuda()
 
 #    poses[:,:,:3,:3] = poses[:,:,:3,:3] @ ref_pose[:, None, :3,:3]
