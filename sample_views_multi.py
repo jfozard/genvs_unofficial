@@ -111,7 +111,7 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
     guiding_img = None
 
     q_prev = 0
-    Q = 16
+    Q = 8
 
     for q in range(0, nposes, Q):
 
@@ -122,12 +122,12 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
         else:
             #render_poses = torch.cat([ref_pose, poses[:,q_prev:min(nposes, q+Q)]], dim=1)
             render_poses = poses[:,q_prev:min(nposes, q+Q)]
-            o = 0
+            o = Q
 
 
         QQ = render_poses.shape[1]
 
-        print('QQ', QQ)
+        print('QQ', QQ, q)
         assert QQ>0
 
         first_view, d1, o1 = render_multi_view(model.module.nerf, render_poses, intrinsics[0], triplanes, cameras)
@@ -150,30 +150,37 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
 
 
         if guiding_img is not None:
-            guiding_img, samples1 = model.module.sd_pipeline.sample_k_guided(guiding_img, first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
+            guiding_img, samples1 = model.module.sd_pipeline.sample_k_guided(guiding_img.cuda(), first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
             samples1 = torch.tensor(samples1)
-
-            samples1 = samples1.view(B, QQ, *samples1.shape[1:])
-            render_output_views.append(samples1[:,o:].cpu())
+            print('S', samples1.shape, guiding_img.shape, QQ)
+            samples1 = samples1.view(B, QQ-guiding_img.shape[0], *samples1.shape[1:])
+            render_output_views.append(samples1[:,:].cpu())
         else:
-            #guiding_img, samples1 = model.module.sd_pipeline.sample_k_guided(torch.zeros((0,4,16,16)).cuda(), first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
-            samples1 = model.module.sd_pipeline.sample_k(first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
+            guiding_img, samples1 = model.module.sd_pipeline.sample_k_guided(torch.zeros((0,4,16,16)).cuda(), first_view.view(B*QQ, *first_view.shape[2:]), stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
             samples1 = torch.tensor(samples1)
 
-            samples1 = samples1.view(B, QQ, *samples1.shape[1:])
-            render_output_views.append(samples1[:,o:].cpu())
+            print('S', samples1.shape, o)
 
-        del samples1, d1, o1, first_view_rgb, first_view, guiding_img
+            samples1 = samples1.view(B, QQ, *samples1.shape[1:])
+            render_output_views.append(samples1[:,1:].cpu())
+            guiding_img = guiding_img[o:]
+
+        #del samples1, d1, o1, first_view_rgb, first_view
+        # 
         q_prev = q
 
-    #render_output_views = [ s.permute(0,1,4,2,3)/255.0 for s in render_output_views]
+    print('rov', [u.shape for u in render_output_views])
 
-    print(render_output_views[0].shape)
+    render_output_views = [ s.permute(0,1,4,2,3)/255.0 for s in render_output_views]
+
+    print('rov', [u.shape for u in render_output_views])
 
     if progress:
         render_output_views = torch.cat(render_output_views, dim=2)
     else:
         render_output_views = torch.cat(render_output_views, dim=1)
+
+
 
     render_output_depth = torch.cat(render_output_depth, dim=1)
     render_output_opacities = torch.cat(render_output_opacities, dim=1)

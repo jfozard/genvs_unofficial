@@ -147,15 +147,19 @@ def sample_euler_guided(model, x, g, sigmas, extra_args=None, callback=None, dis
 
         g_noised = g + sigma_hat*torch.randn_like(g)
 
-        print(g_noised.shape, x.shape)
+        print('gn x', g_noised.shape, x.shape)
 
         denoised = model(torch.cat([g_noised,x], dim=0), sigma_hat * s_in, **extra_args)[g.shape[0]:]
+
+        print('dn', denoised.shape)
+
         d = to_d(x, sigma_hat, denoised)
         if callback is not None:
             callback({'x': x, 'i': i, 'sigma': sigmas[i], 'sigma_hat': sigma_hat, 'denoised': denoised})
         dt = sigmas[i + 1] - sigma_hat
         # Euler method
         x = x + d * dt
+        
     return x
 
 

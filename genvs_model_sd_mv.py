@@ -159,8 +159,7 @@ class NerfDiffDLV3(nn.Module):
 
         if self.train_diffusion_resolution == 64:
             # Downsample targets
-            targets= F.interpolate(targets.view(B*V, *targets.shape[2:]), scale_factor = 0.5).view(B, V,3, 64, 64)
-            
+            targets= F.interpolate(targets.view(B*V, *targets.shape[2:]), scale_factor = 0.5).view(B, V, 3, 64, 64)
          
     
         nv = random.randint(1,2)

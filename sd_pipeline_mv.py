@@ -908,10 +908,12 @@ class SDPipeline(nn.Module):
 
         def sample_fn(n):
             x = torch.randn([n, 4, 16, 16], device=self.device) * sigmas[0]
-            x_0 = K.sampling.sample_euler_guided(model, guiding_latents, x, sigmas, s_tmin=0., s_tmax=float('inf'), s_noise=1.000, s_churn=churn*(40/256)*sampling_timesteps, extra_args={'encoder_hidden_states': encoder_hidden_states})
+            x_0 = K.sampling.sample_euler_guided(model, x, guiding_latents, sigmas, s_tmin=0., s_tmax=float('inf'), s_noise=1.000, s_churn=churn*(40/256)*sampling_timesteps, extra_args={'encoder_hidden_states': encoder_hidden_states})
             return x_0
             
         x_0 = sample_fn(n-ng)
+
+        print('x_0', x_0.shape, n, ng)
 
         result = self.vae.decode(x_0 / self.vae.config.scaling_factor, return_dict=False)[0]
         #print(progress.shape)
@@ -922,8 +924,8 @@ class SDPipeline(nn.Module):
 
         print('result', result.shape)
         
-        #return (255*result.cpu().permute(0,2,3,1)).numpy().astype(np.uint8)
-        return x_0.cpu(), result.cpu()
+        result = (255*result.cpu().permute(0,2,3,1)).numpy().astype(np.uint8)
+        return x_0.cpu(), result
 
 
     @torch.no_grad()

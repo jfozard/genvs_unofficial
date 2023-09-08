@@ -203,7 +203,7 @@ def train(rank, world_size, cfg):
     image_size = cfg.image_size
     batch_size = cfg.batch_size
     acc_steps = cfg.gradient_accumulation_steps
-    n_sample = 1#cfg.sample_every_n_steps
+    n_sample = cfg.sample_every_n_steps
     combine = cfg.combine
 
     epochs_plot_loss = cfg.epochs_checkpoint
