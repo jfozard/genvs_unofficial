@@ -421,7 +421,7 @@ https://github.com/jfozard/genvs_unofficial/assets/4390954/3e8008b5-e905-4bc8-98
 
 https://github.com/jfozard/genvs_unofficial/assets/4390954/f699bb69-ac77-479f-ad9a-6f7dfc64066d
 
-## Multi-view denoising
+## Multi-view denoising (Stable diffusion)
 
 Motivated by a series of recent papers, notably 
 MVDream https://mv-dream.github.io/
@@ -439,6 +439,8 @@ Strategy is to take some of the previously generated (noise-free) latents, and a
 These are then concatenated with the noisy latents, and passed to the denoising UNet (with cross-frame attention). This tends to add consistency
 between views. For further consistency, for non-autoregressive sampling, the input view is always used as one of these views (as it is by far
 the easiest view to denoise). For autoregressive sampling, the conditioning views are used as the extra latents.
+
+Checkpoint at https://huggingface.co/JFoz/genvs_control_multi
 
 ### Stochastic, non-autoregressive sampling
 
