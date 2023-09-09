@@ -30,7 +30,7 @@ from diffusers.models.unet_2d_blocks import (
     UNetMidBlock2DCrossAttn,
     get_down_block,
 )
-from diffusers.models.unet_2d_condition import UNet2DConditionModel
+from unet_2d_condition import UNet2DConditionModel
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
