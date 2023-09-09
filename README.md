@@ -446,57 +446,69 @@ Car 0
 
 ![Acars-conditioning-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/fc45a863-bb35-491f-a0d7-32ad48f4695f)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/fd0d0dd8-6fe6-49e3-91ab-0887e3608262
+https://github.com/jfozard/genvs_unofficial/assets/4390954/63fbd310-5643-4737-ae41-418c20f08a9a
 
 Sampling
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/13071a68-93b2-420c-a5ce-f46c9c6a0daa
 
 Car 1
 
 ![Acars-conditioning-1-000001](https://github.com/jfozard/genvs_unofficial/assets/4390954/5b02e5f1-22ce-4c9d-874f-ad0b270893fc)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/faa5663a-2c6e-4ccc-a951-c62add5468fb
+https://github.com/jfozard/genvs_unofficial/assets/4390954/a84e87a6-81a3-4f1d-8af0-b669004b30cd
 
 Sampling
 
-
+https://github.com/jfozard/genvs_unofficial/assets/4390954/41b0319f-88ec-4e19-8811-fe9a083a3122
 
 Car 2
 
 ![Acars-conditioning-1-000002](https://github.com/jfozard/genvs_unofficial/assets/4390954/dc9f4932-1124-4f58-9113-196e1c7a1b39)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/f48be808-1f41-4ab0-bce4-3649dd12f997
+https://github.com/jfozard/genvs_unofficial/assets/4390954/1975cdab-236f-4f26-aeaf-0591d589b7be
 
 Car 3
 
 ![Acars-conditioning-1-000003](https://github.com/jfozard/genvs_unofficial/assets/4390954/b9b5d3b7-cfef-45e6-b8a4-eccc2e06727c)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/889ad940-28a9-4a93-bcfb-990ba599f4e2
+https://github.com/jfozard/genvs_unofficial/assets/4390954/41001a91-3e60-4627-997a-e452c3e2caca
 
 CarB 0
 
 ![Acars2-conditioning-1-000000](https://github.com/jfozard/genvs_unofficial/assets/4390954/0c5686c0-7f71-437b-87b8-20fa04e04201)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/10b07e28-18a8-4c12-b6cd-aa79bfe3cf30
+
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/38380352-72f5-40c0-9d2d-dd6213d35f77
+
 
 
 CarB 1
 
 ![Acars2-conditioning-1-000001](https://github.com/jfozard/genvs_unofficial/assets/4390954/d20de564-0df7-4fd0-91be-e15aca78399a)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/a18fa245-66e1-4e8b-b975-dd771bb87cf8
+
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/f8d437ff-217f-424f-9c93-773ab7edefad
+
 
 
 CarB 2
 
 ![Acars2-conditioning-1-000002](https://github.com/jfozard/genvs_unofficial/assets/4390954/b7d4f99b-f23c-416c-ab11-c1b031c1fd13)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/6a1b1a22-220c-4952-b084-fdbba76601a3
+
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/de873d9e-7be9-4b9b-a1d8-e775327665f0
+
 
 CarB 3
 
 ![Acars2-conditioning-1-000003](https://github.com/jfozard/genvs_unofficial/assets/4390954/1222cf20-b4a7-47f1-8db6-5427edb3c8aa)
 
-https://github.com/jfozard/genvs_unofficial/assets/4390954/ed4afea0-98ed-4446-af3f-322d730377f2
+
+https://github.com/jfozard/genvs_unofficial/assets/4390954/06975ab9-21e9-4c38-99d4-0fa869b51796
 
 
 ### Unconditional samples
