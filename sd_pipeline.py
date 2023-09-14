@@ -37,6 +37,7 @@ from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, PretrainedConfig
 
+
 import diffusers
 from diffusers import (
     AutoencoderKL,
@@ -44,11 +45,10 @@ from diffusers import (
 #    StableDiffusionControlNetPipeline,
     EulerAncestralDiscreteScheduler,
     EulerDiscreteScheduler,
-    UNet2DConditionModel,
     UniPCMultistepScheduler,
 )
 
-
+from unet_2d_condition import UNet2DConditionModel
 
 from pipeline_controlnet import StableDiffusionControlNetPipeline
 
