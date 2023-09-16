@@ -152,6 +152,7 @@ class NeRFNetwork(NeRFRenderer):
 
         # x  [B, Q, N, S, 3]
     
+        
         x = einsum(R, x[:,None,:,:,:,:] - T[:,:,None,None,None,:], 'b v i j, b v q n s i -> b v q n s j')
 
         x[...,2] += camera_d[:, :, None, None, None]
@@ -175,6 +176,8 @@ class NeRFNetwork(NeRFRenderer):
 
         x_cam = self.get_cam_coords(x, cameras)
 
+        x_cam = x_cam.to(triplanes.dtype)
+        
         # sigma
         sigma_color_feat = self.get_sigma_color_feat(x_cam, triplanes) # [B V Q N*S C]
         sigma_color_feat = self.sigma_color_net(sigma_color_feat) # [B V Q N*S 17]
@@ -201,6 +204,8 @@ class NeRFNetwork(NeRFRenderer):
         # x: [N, 3], in [-bound, bound]
 
         x_cam = self.get_cam_coords(x, cameras)
+
+        x_cam = x_cam.to(triplanes.dtype)
         
         sigma_color_feat = self.get_sigma_color_feat(x_cam, triplanes)
         sigma_color_feat = self.sigma_color_net(sigma_color_feat).mean(dim=1)

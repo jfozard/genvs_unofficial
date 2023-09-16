@@ -1,4 +1,4 @@
-p=output_view_sd_multi2
+p=output_view_sd_multi4
 pp=Acars
 checkpoint=output_sd_multi/large-k-multi-latest.pt
 cfg=2

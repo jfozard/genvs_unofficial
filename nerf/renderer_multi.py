@@ -69,8 +69,8 @@ def near_far_from_bound(rays_o, rays_d, bound, type='cube', min_near=0.05):
         far = torch.where(tmin > tmax, tmin, tmax).min(dim=-1, keepdim=True)[0]
         # if far < near, means no intersection, set both near and far to inf (1e9 here)
         mask = far < near
-        near[mask] = 1e9
-        far[mask] = 1e9
+        near[mask] = 1e4 if near.dtype==torch.float16 else 1e9
+        far[mask] = 1e4 if far.dtype==torch.float16 else 1e9
         # restrict near to a minimal value
         near = torch.clamp(near, min=min_near)
 

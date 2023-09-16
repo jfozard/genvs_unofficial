@@ -188,7 +188,7 @@ def sample_sphere(model, data, source_view_idx, progress=False, stochastic=True,
 
     #print('rov', [u.shape for u in render_output_views])
 
-    #render_output_views = [ s.permute(0,1,4,2,3)/255.0 for s in render_output_views]
+    render_output_views = [ s.permute(0,1,4,2,3)/255.0 for s in render_output_views]
 
     #print('rov', [u.shape for u in render_output_views])
 

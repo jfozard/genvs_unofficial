@@ -60,6 +60,7 @@ def get_rays(poses, intrinsics, H, W, N=-1, error_map=None):
     directions = torch.stack((xs, ys, zs), dim=-1)
     directions = safe_normalize(directions)
 
+    directions = directions.to(poses.dtype)
     rays_d = directions @ poses[:, :3, :3].transpose(-1, -2) # (B, N, 3)
 
     rays_o = poses[..., :3, 3] # [B, 3]
