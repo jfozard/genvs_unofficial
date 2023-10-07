@@ -1568,10 +1568,6 @@ class SDPipeline(nn.Module):
         )
         """
 
-        """
-
-
-        """
         progress = []
         if latents is not None:
             progress.append(latents)
@@ -1672,9 +1668,6 @@ class SDPipeline(nn.Module):
 
                 if do_cfg:
 
-                    sample = torch.cat([args[0]]*2, dim=0)
-                    t = torch.cat([args[1]]*2, dim=0)
-
 
                     down_block_res_samples, _ = self.controlnet(
                         sample,
@@ -1685,10 +1678,9 @@ class SDPipeline(nn.Module):
                         return_dict=False,
                     )
 
-                    down_block_res_samples = [torch.cat([d, torch.zeros_like(d[:d.shape[0]//2])]) for d in down_block_res_samples]
-                    
-                    sample = torch.cat([args[0]]*3, dim=0)
-                    t = torch.cat([args[1]]*3, dim=0)
+                    down_block_res_samples = [torch.cat([d, torch.zeros_like(d)]) for d in down_block_res_samples]
+                    sample = torch.cat([args[0]]*2, dim=0)
+                    t = torch.cat([args[1]]*2, dim=0)
 
                     
                     # Predict the noise residual
@@ -1700,9 +1692,9 @@ class SDPipeline(nn.Module):
                             sample.to(dtype=weight_dtype) for sample in down_block_res_samples
                         ],
                     ).sample
-                    eps, eps_no_img, eps_uc = eps_all.chunk(3)
-    
-                    return eps #+ eps_no_img*(self.cfg-1) - eps_uc*(self.cfg-1)
+                    eps, eps_uc = eps_all.chunk(2)
+                    return eps*self.cfg - eps_uc*(self.cfg-1)
+ 
                     
 
                     
@@ -1803,14 +1795,13 @@ class SDPipeline(nn.Module):
 
 
         if do_cfg:
-            class_labels = torch.cat([torch.zeros_like(class_labels), class_labels], dim=0)
     
             input_ids = self.tokenizer(
-                input_prompts + input_prompts + [""]*n, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+                input_prompts +  [""]*n, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
                 ).input_ids.cuda()
             encoder_hidden_states = self.text_encoder(input_ids)[0].cuda()
             input_ids = self.tokenizer(
-                input_prompts + input_prompts, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
+                input_prompts , max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
                 ).input_ids.cuda()
             controlnet_encoder_hidden_states = self.text_encoder(input_ids)[0].cuda()
 
@@ -1818,7 +1809,7 @@ class SDPipeline(nn.Module):
                 unconditioning_pixel_values = torch.zeros_like(conditioning_pixel_values)
             else:
                 unconditioning_pixel_values = torch.rand_like(conditioning_pixel_values)
-            conditioning_pixel_values = torch.cat([conditioning_pixel_values, unconditioning_pixel_values], dim=0)
+            #conditioning_pixel_values = torch.cat([conditioning_pixel_values, unconditioning_pixel_values], dim=0)
 
         controlnet_image = conditioning_pixel_values.to(dtype=self.weight_dtype)
 
@@ -1837,9 +1828,8 @@ class SDPipeline(nn.Module):
 
                 if do_cfg:
 
-                    sample = torch.cat([args[0]]*2, dim=0)
-                    t = torch.cat([args[1]]*2, dim=0)
-
+                    sample = args[0]
+                    t = args[1]
 
                     down_block_res_samples, _ = self.controlnet(
                         sample,
@@ -1850,11 +1840,12 @@ class SDPipeline(nn.Module):
                         return_dict=False,
                     )
 
-                    down_block_res_samples = [torch.cat([d, torch.zeros_like(d[:d.shape[0]//2])]) for d in down_block_res_samples]
-                    
-                    sample = torch.cat([args[0]]*3, dim=0)
-                    t = torch.cat([args[1]]*3, dim=0)
+                    down_block_res_samples = [torch.cat([d, torch.zeros_like(d)]) for d in down_block_res_samples]
+                    sample = torch.cat([args[0]]*2, dim=0)
+                    t = torch.cat([args[1]]*2, dim=0)
 
+                    
+                    # Predict the noise residual
                     eps_all = self.inner_model(
                         sample,
                         t,
@@ -1863,15 +1854,18 @@ class SDPipeline(nn.Module):
                             sample.to(dtype=weight_dtype) for sample in down_block_res_samples
                         ],
                     ).sample
-                    eps, eps_no_img, eps_uc = eps_all.chunk(3)
-    
-                    return eps #+ eps_no_img*(self.cfg-1) - eps_uc*(self.cfg-1)
+                    eps, eps_uc = eps_all.chunk(2)
+                    return eps*self.cfg - eps_uc*(self.cfg-1)
+ 
+
                     
 
                     
         model = ControlNetDenoiser(self.controlnet, self.unet, torch.tensor(noise_scheduler.alphas_cumprod.numpy()), cfg)
                         
         model = model.to(self.device)
+
+        model.eval()
 
         sigmas = model.get_sigmas(sampling_timesteps)
 
@@ -1880,9 +1874,9 @@ class SDPipeline(nn.Module):
         print('cfg', cfg, x is None, len(sigmas), timestep)
 
         if x is None:
-            x = sigmas[0] * torch.randn([n, 4, 16, 16], device=self.device)
+            x = latents + sigmas[0] * torch.randn([n, 4, 16, 16], device=self.device)
 
-        x_0 = model(x, torch.tensor([s]*n).cuda()) #+ gamma *s**2 * ( nerf_latents - latents)
+        x_0 = model(x, torch.tensor([s]*n).cuda()) + gamma *s**2 * ( nerf_latents - latents)
         
         d = (x - x_0) / s
         

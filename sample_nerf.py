@@ -193,7 +193,7 @@ def sample_nerf_views(model, data, source_view_idx, progress=False, stochastic=T
     
     opt = AdamW([{'params':triplanes, 'lr':1e-1}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2)
 
-    n_iters = 0
+    n_iters = 500
     QQ = 1
     # NeRF loop
     for i in (pbar := tqdm(range(n_iters))):
@@ -537,7 +537,6 @@ def sample_ngd(model, data, source_view_idx, progress=False, stochastic=True, un
     # Fit NeRF
     triplanes = triplanes.detach()
     triplanes.requires_grad = True
-    print(triplanes)
     
     opt = AdamW([{'params':triplanes, 'lr':1e-1}], betas=(0.9, 0.99), eps=1e-8, weight_decay=1e-2)
 
@@ -586,13 +585,14 @@ def sample_ngd(model, data, source_view_idx, progress=False, stochastic=True, un
 
     denoised_latents = current_latents
     current_latents = None #current_latents + torch.randn([n, 4, 16, 16], device=self.device) * sigmas[0]
+    #current_latents = torch.randn([n, 4, 16, 16], device=self.device) * sigmas[0]
 
     #denoised_latents, _ = model.module.sd_pipeline.sample_k_guided(torch.zeros((0,4,16,16)).cuda(), render_views[0], stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
 
     #denoised_latents = denoised_latents[None]
     #current_views = current_views[None]
-    n_timesteps = 2# steps
-    nerf_iters = 0
+    n_timesteps = steps # steps
+    nerf_iters = 200
 
     print('cfg', cfg)
     for i in tqdm(range(n_timesteps)):
@@ -607,7 +607,8 @@ def sample_ngd(model, data, source_view_idx, progress=False, stochastic=True, un
         current_latents = current_latents[None]
         
         # Decode current views to rgb?
-        """
+        
+        current_views = 0.5*(vae.decode(denoised_latents[0].cuda() / vae.config.scaling_factor, return_dict=False)[0][None]+1)
 
         
         # NeRF training
@@ -664,9 +665,15 @@ def sample_ngd(model, data, source_view_idx, progress=False, stochastic=True, un
 
             nerf_latents = vae.encode(nerf_rgb_views[0]).latent_dist.sample()[None]
             nerf_latents = nerf_latents * vae.config.scaling_factor
-        """
+        
 
     current_views = 0.5*(vae.decode(denoised_latents[0].cuda() / vae.config.scaling_factor, return_dict=False)[0][None]+1)
+
+    #render_output_views = []
+    #with torch.no_grad():   
+    #        _, samples1 = model.module.sd_pipeline.sample_k_guided(torch.zeros((0,4,16,16)).cuda(),render_views[0], stochastic=stochastic, unconditional=unconditional, cfg=cfg, churn=churn, sampling_timesteps=steps)
+    #        samples1 = torch.tensor(samples1[:,None]).permute(0,1,4,2,3)
+    #        render_output_views.append((2*samples1-1).cpu())         
 
         
     # Decode final NeRF views
@@ -674,10 +681,16 @@ def sample_ngd(model, data, source_view_idx, progress=False, stochastic=True, un
 
     render_output_views = current_views.cpu()
     
+    #render_output_views = torch.cat(render_output_views, dim=1)
+
+
     render_rgb_views = []
     render_output_depth = []
     render_output_opacities = []
 
+    print('rov', render_output_views.shape, poses.shape)
+
+    QQ = 1
     with torch.no_grad():
         for j in range(render_output_views.shape[1]):
             render_poses = poses[:, j:j+1]
